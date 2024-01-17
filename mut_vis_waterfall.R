@@ -67,7 +67,7 @@ write.table(maf3, paste('tables/waterfall',expname,'.csv',sep=''), row.names=F, 
 
 ## transform csv files to xls tables
 setwd(paste(getwd(),'/tables',sep=''))
-system('../csv2xlsNGS.pl')
+system('csv2xlsNGS.pl')
 system('rm *.csv')
 setwd(gsub('/tables','',getwd()))
 

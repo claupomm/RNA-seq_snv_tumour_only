@@ -59,38 +59,38 @@ mut_long <- gather(mut2[mut2$found=="no", colnames(mut2) %in% c("cell_line", "LC
 mut_long$cell_line = as.factor(mut_long$cell_line)
 mut_long$count = factor(mut_long$count, levels=c("in", "out", ">20%", "<=20%", "<=5", ">5"))
 pdf(paste("plots/cosmic_gatk_different_sources2", expname, ".pdf", sep = ""), width = 7, height = 7)
-p2 <- ggplot(data = mut_long, aes(x = cell_line, fill = cosmic)) +
-    geom_bar(stat = "count", position = position_dodge()) + 
+p <- ggplot(data = mut_long, aes(x = cell_line, fill = cosmic)) +
+    geom_bar(stat = "count", position = position_dodge()) +
     theme_bw(base_size = 12, base_family = "") +
     scale_fill_manual(values = c("#1F78B4", "#33A02C", "#E31A1C")) +
-    facet_wrap(~cosmic + count, nrow = 3) + 
+    facet_wrap(~cosmic + count, nrow = 3) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
     ggtitle("Cosmic variants (v97) not found by GATK") +
     xlab("") + ylab("Number of mutations")
-p2
+p
 dev.off()
 pdf(paste("plots/cosmic_gatk_different_sources2_portion", expname, ".pdf", sep = ""), width = 5, height = 5)
-p1 <- ggplot(data = mut_long, aes(x = cell_line, fill = count)) +
-    geom_bar(stat = "count", position = "fill") + 
+p2 <- ggplot(data = mut_long, aes(x = cell_line, fill = count)) +
+    geom_bar(stat = "count", position = "fill") +
     theme_bw(base_size = 12, base_family = "") +
     scale_fill_brewer(palette = "Paired") +
-    facet_wrap(~cosmic, nrow = 3) + 
+    facet_wrap(~cosmic, nrow = 3) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.title=element_blank()) +
     ggtitle("Cosmic variants") +
     xlab("") + ylab("Portion of mutations")
-p1
+p2
 dev.off()
 
-# overview plot
+# overview plot for manuscript
 pdf(paste("plots/cosmic_gatk", expname, ".pdf", sep = ""), width = 5, height = 5)
-p <- ggplot(data = mut2, aes(x = cell_line, fill = found)) +
-    geom_bar(stat = "count", position = position_dodge()) + 
+p1 <- ggplot(data = mut2, aes(x = cell_line, fill = found)) +
+    geom_bar(stat = "count", position = position_dodge()) +
     theme_bw(base_size = 12, base_family = "") +
     scale_fill_brewer(palette = "Paired") +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
     ggtitle("Cosmic variants") +
     xlab("") + ylab("Number of mutations")
-p
+p1
 dev.off()
 
 
