@@ -63,41 +63,42 @@ mut$gatk= "no"
 # all variants of the cell lines in one table
 for (i in seq_along(name)) {
     print(paste(files[i], date()))
-    # gatk results
+    ## gatk results
     gk = read.csv(files[i], header = T, stringsAsFactors = FALSE, skip = 228, sep = "\t")
-    # all strand bias, SNP cluster etc filtered by gatk
+    # all strand bias, SNPcluster etc filtered by gatk
     gk = gk[gk$FILTER=="PASS", ]
     names(gk)[1] = "CHROM"
     gk$AD = sapply(gk[, 10], function(x) strsplit(x, ":")[[1]][2])
     gk$DP = sapply(gk$AD, function(x) sum(as.numeric(strsplit(x, ",")[[1]])))
-    ## read depth filter
     gk = gk[gk$DP >= minCount, ]
     gk$AD = sapply(gk$AD, function(x) as.numeric(strsplit(x, ",")[[1]][2]))
     colnames(gk)[(ncol(gk)-1):ncol(gk)] = paste(name[i],c("AD","DP"), sep="_")
     gk = gk[, -c(3, 6:10)]
-    # create id for overlapping with vep; caution with deletion/insertion positions
+    # create id for overlapping with vep; caution with deletion/insertion
 	gk$id = paste(gk$CHROM, gk$POS, sep = "_")
 
-    # load variant effect information (vep), maf format
+    ## load variant effect information (vep), maf format
+    # take out mutations gnomad af>0.01 => in maf FILTER="common_variant"
+    # + filter coding variants
     vep = read.csv(gzfile(files_vep[i]), header=T, stringsAsFactors=F, sep = "\t", comment.char="#")
-    # filter coding variants
     vep = vep[grep("protein_coding", vep$BIOTYPE), c(1:16, 35:43, 47:75, 77:87, 93:114)]
     vep = vep[vep$HGVSp!="", ]
-    # take out mutations gnomad af>0.01
-    vep = vep[vep$FILTER != "common_variant", ]
-    # remove phase 3 1000 genomes
+    vep = vep[vep$FILTER != "common_variant", ] # gnomad filter
+    # => --af => phase 3 1000 genomes
     vep = vep[is.na(vep$AF) | vep$AF<0.01, ]
-    # vep$vcf_pos: already -1 for deletions
-    vep$id = paste(vep$Chromosome, vep$vcf_pos, sep="_")
+    # keep variants only with minimum depth via gatk data
+    vep$id = paste(vep$Chromosome, vep$vcf_pos, sep="_") # vep$vcf_pos: already -1 for deletions
     vep = vep[vep$id %in% gk$id,]
 
     # overlap to cosmic
     mut$gatk[mut$Chrom %in% vep$Chromosome & mut$Mutation_AA %in% vep$HGVSp_Short & mut$Sample_name == name[i]] = "yes"
+    tmp = mut[mut$Sample_name == name[i], ]
 }
+
 mut = mut[order(mut$Sample_name), ]
 
 # cancer gene census, curated cancer genes
-cgc = read.csv(gzfile("../data/Cosmic_MutantCensus_Tsv_v98_GRCh38/Cosmic_MutantCensus_v98_GRCh38.tsv.gz"), sep="\t")
+cgc = read.csv(gzfile("../data/Cosmic_MutantCensus_v98_GRCh38.tsv.gz"), sep="\t")
 cgc = cgc[cgc$SAMPLE_NAME %in% unique(mut$Sample_name),] # COLO-824 not found
 sort(unique(cgc$MUTATION_AA))
 tmp = match(mut$Mutation_AA, cgc$MUTATION_AA, nomatch=0)
@@ -116,12 +117,12 @@ sum(mut$gatk == "yes" & mut$cgc == "yes")
 sum(mut$cgc == "yes")
 #  => 10 in mut table, all 10 found by gatk
 
-mut2 = mut[!duplicated(paste(mut$Sample_name, mut$HGVSG)), c(3, 13:19)]
+mut2 = mut[!duplicated(paste(mut$Sample_name, mut$HGVSG)), c(3,5, 13:19)]
 
 
 # check, if missed mutants are expressed
 # tpm better than nexprs => all expr values within one sample add to 1M counts; this different to nexprs
-tpm = read.csv("../tables/TPM_salmon_Project_Sonja220913_bc.tsv", sep = "\t")
+tpm = read.csv("../tables/TPM_salmon_Project_bc.tsv", sep = "\t")
 colnames(tpm) = gsub("\\.", "-", colnames(tpm))
 mut2$symbol[!mut2$symbol %in% tpm$external_gene_name]
 # "FAM129B" "TMEM206" => current names: PACC1, NIBAN2
@@ -141,7 +142,6 @@ for (i in 1:nrow(mut2)) {
         mut2$expr[i] = ">1 tpm"
     }
 }
-
 
 # Missing variants in filtered rna edit sites?
 redit = read.csv("../data/TABLE1_hg38_chr_pos.txt", sep="\t", header=FALSE)
@@ -170,7 +170,7 @@ mut2[mut2$LCR=="in",]
 rm(lcr)
 
 # Missing variants in filtered common dbsnp sites?
-dbsnp = read.csv("../data/dbsnp/v156/GCF_000001405.40.common.chr.tsv", sep="\t", header=FALSE)
+dbsnp = read.csv("../data/GCF_000001405.40.common.chr.tsv", sep="\t", header=FALSE)
 mut2$dbsnp = "no"
 for (i in 1:nrow(mut2)) {
     tmp = dbsnp[dbsnp$V1 %in% mut2$Chrom[i] & dbsnp$V2 %in% mut2$Pos[i],]
@@ -227,7 +227,7 @@ tab = read.csv(paste('tables/snv_indel_maf_Project_bc_mut_gatk_hc_dbsnp.tsv',sep
 tab$COSMIC = FALSE
 for (i in 1:nrow(mut2)) {
     tmp = tab[tab$sampleID == mut2$Sample_name[i] & tab$Chromosome == mut2$Chrom[i] & tab$HGVSp_Short == mut2$Mutation_AA[i],]
-    if(nrow(tmp)>0) tab$COSMIC[i] = TRUE
+    if(nrow(tmp)>0) tab$COSMIC[tab$sampleID == mut2$Sample_name[i] & tab$Chromosome == mut2$Chrom[i] & tab$HGVSp_Short == mut2$Mutation_AA[i]] = TRUE
 }
 write.table(tab, paste("tables/snv_indel_maf_Project_bc_mut_gatk_hc_dbsnp.tsv", sep = ""),
     row.names = FALSE, sep = "\t")

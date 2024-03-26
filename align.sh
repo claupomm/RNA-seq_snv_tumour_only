@@ -11,8 +11,7 @@ sample=${PWD##*/}
 
 # get paths, tools
 star=/path/to/STAR
-genome=../data/gencode/42/hs/star_chr_tr # genome with chr and scaffolds, primary assembly, transcriptome as recommended in Star manual for 2.7.10b, 20.10.22
-
+genome=/path/to/your/star/indices # genome with chr and scaffolds, primary assembly, transcriptome as recommended in Star manual for 2.7.10b
 
 date
 echo "Alignment in 2passmode for gatk rna-seq snv analysis..."

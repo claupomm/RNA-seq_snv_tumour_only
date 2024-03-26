@@ -1,6 +1,6 @@
 # Variant calling pipeline on RNA-seq data for tumour-only breast cancer cell lines
 
-Typically, variant calling on tumour material is performed on whole-exome or whole-genome DNA sequencing. This workflow, however, has been used for analysing RNA-seq data of 29 tumour breast cancer cell lines without matched-normal sample pairs for identifying single nuleotide variants (SNVs) and insertions / deletions (InDels). Since capturing germline variants produces a massive amount of mutations per sample, the filtering process is of special importance in order to retrieve an essence of potentially intriguing variants. 
+Typically, variant calling on tumour material is performed on who PIPELINE ON RNA-SEQ DATA FOR TUMOUR-ONLY BREAST CANCER CELL LINESle-exome or whole-genome DNA sequencing. This workflow, however, has been used for analysing RNA-seq data of 29 tumour breast cancer cell lines without matched-normal sample pairs for identifying single nuleotide variants (SNVs) and insertions / deletions (InDels). Since capturing germline variants produces a massive amount of mutations per sample, the filtering process is of special importance in order to retrieve an essence of potentially intriguing variants. 
 
 ## Outline
 
@@ -45,6 +45,7 @@ Following data need to be downloaded:
     
     - Homo_sapiens_assembly38.fasta
     - 1000G_phase1.snps.high_confidence.hg38.vcf
+    - 1000G_phase3_v4_20130502.sites.hg38.vcf
     - Mills_and_1000G_gold_standard.indels.hg38.vcf
 
 - RNA edit sites, http://srv00.recas.ba.infn.it/atlas/download.html: TABLE1_hg38_chr_pos.txt
@@ -62,8 +63,6 @@ Following data need to be downloaded:
   - 1000 Genomes, 1000G_phase3_v4_20130502.sites.hg38.af01.vcf
   - gnomAD: contained in VEP data sources
 
-
-
 ### Create folders
 
 ```
@@ -73,8 +72,6 @@ mkdir $DIR/raw
 mkdir $DIR/data # store all downloaded data here
 cd $DIR/raw
 ```
-
-
 
 ### Link sequencing files
 
@@ -272,7 +269,8 @@ Following data files should be stored in your folder Project_mut_bc/data:
 R --file="compare_mut2cosmic.R"
 ```
 
-Following cosmic_samples.xlsx was already provided, hence can be skipped and you may proceed to compare_mut2cosmic2.R, but if wanted, you may create the coverage table yourself: 
+Following cosmic_samples.xlsx was already provided, hence can be skipped and you may proceed to compare_mut2cosmic2.R, but if wanted, you may create the coverage table yourself:
+
 Get coverage/depth of theses 400 cosmic mutations for the bc cell lines via bedcov on bam files.
 
 ```
