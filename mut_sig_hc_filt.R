@@ -63,15 +63,14 @@ for (sample in samples$sampleName) {
   bc$sampleID = sample
   bc <- bc[bc$T_DP >= 5,] # filter depth
 
-  # read in maf file
+  # take out mutations gnomad af>0.01 => in maf FILTER="common_variant"
+  # + filter coding variants
   files_vep = paste("snp/", sample, ".hc.pass2.lcr.dbsnp.vcf.maf.gz", sep="")
   vep = read.csv(gzfile(files_vep), header=T, stringsAsFactors=F, sep = "\t", comment.char="#")
-  # filter coding variants
   vep = vep[grep("protein_coding", vep$BIOTYPE), c(1:16, 35:43, 47:75, 77:87, 93:114)]
   vep = vep[vep$HGVSp!="", ]
-  # gnomad filter
-  vep = vep[vep$FILTER != "common_variant", ]
-  # filter 1000 genomes
+  vep = vep[vep$FILTER != "common_variant", ] # gnomad filter
+  # => --af => phase 3 1000 genomes
   vep = vep[is.na(vep$AF) | vep$AF<0.01, ]
 
   vep$id = paste(vep$Chromosome, vep$Start_Position, vep$Reference_Allele, vep$Tumor_Seq_Allele2, sep="_")
