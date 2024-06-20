@@ -117,7 +117,7 @@ sum(mut$gatk == "yes" & mut$cgc == "yes")
 sum(mut$cgc == "yes")
 #  => 10 in mut table, all 10 found by gatk
 
-mut2 = mut[!duplicated(paste(mut$Sample_name, mut$HGVSG)), c(3,5, 13:19)]
+mut2 = mut[!duplicated(paste(mut$Sample_name, mut$HGVSG)), c(3,5,6, 13:19)]
 
 
 # check, if missed mutants are expressed
@@ -196,16 +196,18 @@ mut2[mut2$kG=="yes",]
 rm(kG)
 
 # Missing variants in filtered >20% samples sites?
-gatk = readxl::read_excel("tables/snv_maf_Project_bc_mut_gatk_hc_dbsnp.xls")
-mut2$Freq = "<=20%"
+gatk = readxl::read_excel("tables/snv_indel_maf_less20_Project_bc_mut_gatk_hc_dbsnp.tsv")
+mut2$Freq = ""
 for (i in 1:nrow(mut2)) {
-    tmp = gatk[gatk$CHROM %in% mut2$Chrom[i] & gatk$POS %in% mut2$Pos[i],]
+    if(mut2$gatk[i]=="no") next
+    tmp = gatk[gatk$Chromosome %in% mut2$Chrom[i] & 
+        gatk$sampleID %in% mut2$Sample_name[i] &
+        (gatk$Start_Position %in% mut2$Pos[i] | gatk$HGVSp_Short == mut2$Mutation_AA[i]),]
     if(i%%50 ==0) print(paste(date(), i))
     if (nrow(tmp)>0) {
-        mut2$Freq[i] = ">20%"
+        mut2$Freq[i] = "<20%"
     }
 }
-mut2[mut2$gatk=="no" & mut2$Freq==">20%",]
 rm(gatk)
 
 

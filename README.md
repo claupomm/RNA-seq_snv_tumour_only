@@ -1,6 +1,6 @@
 # Variant calling pipeline on RNA-seq data for tumour-only breast cancer cell lines
 
-Typically, variant calling on tumour material is performed on who PIPELINE ON RNA-SEQ DATA FOR TUMOUR-ONLY BREAST CANCER CELL LINESle-exome or whole-genome DNA sequencing. This workflow, however, has been used for analysing RNA-seq data of 29 tumour breast cancer cell lines without matched-normal sample pairs for identifying single nuleotide variants (SNVs) and insertions / deletions (InDels). Since capturing germline variants produces a massive amount of mutations per sample, the filtering process is of special importance in order to retrieve an essence of potentially intriguing variants. 
+Typically, variant calling on tumour material is performed on whole-exome or whole-genome DNA sequencing. This workflow, however, has been used for analysing RNA-seq data of 29 tumour breast cancer cell lines without matched-normal sample pairs for identifying single nuleotide variants (SNVs) and insertions / deletions (InDels). Since capturing germline variants produces a massive amount of mutations per sample, the filtering process is of special importance in order to retrieve an essence of potentially intriguing variants. 
 
 ## Outline
 
@@ -17,6 +17,12 @@ Typically, variant calling on tumour material is performed on who PIPELINE ON RN
       3. gnomAD
    5. non-coding regions
    6. variants occuring in >20% of the breast cancer cell lines
+5. Variant validation
+	1. Statistics
+	2. Mutational signatures
+	3. Comparison to COSMIC
+	4. Mutational burden
+	5. Specificity and sensitivity
 
 ## Intial steps
 
@@ -292,4 +298,60 @@ Visualise mutational burden as waterfall plot on the filtered mutations.
 
 ```
 R --file="mut_vis_waterfall.R" &> mut_vis_waterfall.Rout  &
+```
+
+### Specificity and sensitivity
+
+In order to compare the improvement of the successive filtering steps of the pipeline, specificity and sensitivity are calculated based on the verified COSMIC 400 variants set of the 10 overlapping breast cancer cell lines of DSMZ. 
+Counting of the variant intersect is carried out via vcftools (https://vcftools.github.io/). 
+
+#### Prepare sample vcf
+As vcftools needs the vcf format for comparison, the COSMIC variants are extracted from the corresponding unfiltered called variant vcf for each cell line and stored as vcf for vcftools.
+```
+cd $DIR
+R --file="spec_sens.R"
+```
+
+
+#### Identify intersection and unique variants
+For each sample and filter step the overlapping and unique variants to the defined COSMIC variant set are detected via vcftools. 
+
+```
+cd $DIR
+R --file="spec_sens.R"
+start="cosmic_mut_more_chr_pos_"
+end="_Project_bc_mut_gatk_hc_dbsnp2.vcf"
+for i in $(cut -d, -f1 file2sample_cosmic.csv| tail -n+2 - ); do
+date
+echo $i
+chr=$(cut -f1 spec_sens/${start}$i${end} | grep "^chr" | uniq | tr '\n' ',')
+chr="${chr/%,/}"
+chr="${chr/chr/--chr chr}"
+chr="${chr//,/ --chr }"
+vcftools --diff-site --out "spec_sens/$i.cosmic400.hc" $chr --gzvcf snp/$i.hc.pass.vcf.gz --diff spec_sens/${start}$i${end}
+vcftools --diff-site --out "spec_sens/$i.cosmic400.hc.pass" $chr --gzvcf snp/$i.hc.pass.vcf.gz --gzdiff spec_sens/${start}$i${end}
+vcftools --diff-site --out "spec_sens/$i.cosmic400.hc.pass2" $chr --gzvcf snp/$i.hc.pass2.vcf.gz --gzdiff spec_sens/${start}$i${end}
+vcftools --diff-site --out "spec_sens/$i.cosmic400.hc.pass2.lcr" $chr --gzvcf snp/$i.hc.pass2.lcr.vcf.gz --gzdiff spec_sens/${start}$i${end}
+vcftools --diff-site --out "spec_sens/$i.cosmic400.hc.pass2.lcr.dbsnp" $chr --gzvcf snp/$i.hc.pass2.lcr.dbsnp.vcf.gz --gzdiff spec_sens/${start}$i${end}
+done
+```
+
+#### Summarise
+Count all unique/overlapping variants for each filter step and sample to one table.
+```
+cd $DIR/spec_sens
+echo "sample,TP_hc,TP_pass,TP_pass2,TP_lcr,TP_dbsnp,FP_hc,FP_pass,FP_pass2,FP_lcr,FP_dbsnp,FN_hc,FN_pass,FN_pass2,FN_lcr,FN_dbsnp" > overlap_cosmic400_samples.csv
+end=diff.sites_in_files
+for j in $(cut -d, -f1 ../file2sample_cosmic.csv| tail -n+2 - ); do
+echo $j
+i=$j.cosmic400
+echo $j","$(cut -f4 $i.hc.$end | grep -c B)","$(cut -f4 $i.hc.pass.$end | grep -c B)","$(cut -f4 $i.hc.pass2.$end | grep -c B)","$(cut -f4 $i.hc.pass2.lcr.$end | grep -c B)","$(cut -f4 $i.hc.pass2.lcr.dbsnp.$end | grep -c B)","$(cut -f4 $i.hc.$end | grep -c 1)","$(cut -f4 $i.hc.pass.$end | grep -c 1)","$(cut -f4 $i.hc.pass2.$end | grep -c 1)","$(cut -f4 $i.hc.pass2.lcr.$end | grep -c 1)","$(cut -f4 $i.hc.pass2.lcr.dbsnp.$end | grep -c 1),"$(cut -f4 $i.hc.$end | grep -c 2)","$(cut -f4 $i.hc.pass.$end | grep -c 2)","$(cut -f4 $i.hc.pass2.$end | grep -c 2)","$(cut -f4 $i.hc.pass2.lcr.$end | grep -c 2)","$(cut -f4 $i.hc.pass2.lcr.dbsnp.$end | grep -c 2)" >> overlap_cosmic400_samples.csv
+done
+```
+
+#### Calculate and visualise
+As basis for calculating sensitivity and specificity the numbers of all positive variants of a sample are derived from the extracted 400 COSMIC variants and the numbers of all negative variants are taken from the unfiltered called variants of a sample without the positive variants. Furtheron, true positive variants correspond to the intersect to the COSMIC variant set and false positive are those, which are unique and not overlapping to the COSMIC variant set for each sample and filter step, and false negatives those, which are unique for COSMIC variant set.
+```
+cd $DIR
+R --file="spec_sens2.R"
 ```
