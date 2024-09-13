@@ -90,7 +90,7 @@ Following data need to be downloaded to your project folder to the subfolder dat
   
 
 General pipeline scheme:
-![Overview flowchart](./plots/flowchart.pdf "Overview flowchart")
+![Overview flowchart](./plots/Figure_S2_flowchart.pdf "Overview flowchart")
 
 
 ### Create folders
