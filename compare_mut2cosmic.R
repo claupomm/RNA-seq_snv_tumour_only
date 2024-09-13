@@ -7,7 +7,8 @@ library(tidyr)
 library(ggplot2)
 library(data.table)
 
-expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp2", sep="")
+expname = "_Project_bc_mut_gatk_hc_dbsnp2"
+# expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp2", sep="")
 
 
 # cell line samples
@@ -16,7 +17,7 @@ samples = samples[!duplicated(samples$sampleName), ]
 
 
 # A tab separated table of all the point mutations in the Cosmic Cell Lines Project from the current release.
-tab = read.csv(gzfile("../data/CosmicCLP_MutantExport_v97_2023_01.tsv.gz"), sep="\t")
+tab = read.csv(gzfile("data/CosmicCLP_MutantExport_v97_2023_01.tsv.gz"), sep="\t")
 colnames(tab) = gsub("\\.", "_", colnames(tab))
 tab$Sample_name = toupper(tab$Sample_name)
 sum(samples$sampleName %in% tab$Sample_name)
@@ -98,7 +99,7 @@ for (i in seq_along(name)) {
 mut = mut[order(mut$Sample_name), ]
 
 # cancer gene census, curated cancer genes
-cgc = read.csv(gzfile("../data/Cosmic_MutantCensus_v98_GRCh38.tsv.gz"), sep="\t")
+cgc = read.csv(gzfile("data/Cosmic_MutantCensus_v98_GRCh38.tsv.gz"), sep="\t")
 cgc = cgc[cgc$SAMPLE_NAME %in% unique(mut$Sample_name),] # COLO-824 not found
 sort(unique(cgc$MUTATION_AA))
 tmp = match(mut$Mutation_AA, cgc$MUTATION_AA, nomatch=0)
@@ -116,13 +117,15 @@ sum(mut$gatk == "no" & mut$cgc == "yes")
 sum(mut$gatk == "yes" & mut$cgc == "yes")
 sum(mut$cgc == "yes")
 #  => 10 in mut table, all 10 found by gatk
+write.table(mut, paste("tables/cosmic_mut_more", expname, ".tsv", sep = ""),
+    row.names = FALSE, sep = "\t")
 
 mut2 = mut[!duplicated(paste(mut$Sample_name, mut$HGVSG)), c(3,5,6, 13:19)]
 
 
 # check, if missed mutants are expressed
 # tpm better than nexprs => all expr values within one sample add to 1M counts; this different to nexprs
-tpm = read.csv("../tables/TPM_salmon_Project_bc.tsv", sep = "\t")
+tpm = read.csv("tables/TPM_salmon_Project_bc.tsv", sep = "\t")
 colnames(tpm) = gsub("\\.", "-", colnames(tpm))
 mut2$symbol[!mut2$symbol %in% tpm$external_gene_name]
 # "FAM129B" "TMEM206" => current names: PACC1, NIBAN2
@@ -144,7 +147,7 @@ for (i in 1:nrow(mut2)) {
 }
 
 # Missing variants in filtered rna edit sites?
-redit = read.csv("../data/TABLE1_hg38_chr_pos.txt", sep="\t", header=FALSE)
+redit = read.csv("data/TABLE1_hg38_chr_pos.txt", sep="\t", header=FALSE)
 mut2$redit = "no"
 for (i in 1:nrow(mut2)) {
     tmp = redit[redit$V1 %in% mut2$Chrom[i] & redit$V2 %in% mut2$Pos[i],]
@@ -157,7 +160,7 @@ mut2[mut2$redit=="yes",]
 rm(redit)
 
 # Missing variants in filtered low complexity regions?
-lcr = read.csv(gzfile("../data/LCR-hs38_with_chr.bed.gz"), sep="\t", header=FALSE)
+lcr = read.csv(gzfile("data/LCR-hs38_with_chr.bed.gz"), sep="\t", header=FALSE)
 mut2$LCR = "out"
 for (i in 1:nrow(mut2)) {
     tmp = lcr[lcr$V1 %in% mut2$Chrom[i] & lcr$V2 <= mut2$Pos[i] & lcr$V3 > mut2$Pos[i],]
@@ -170,7 +173,7 @@ mut2[mut2$LCR=="in",]
 rm(lcr)
 
 # Missing variants in filtered common dbsnp sites?
-dbsnp = read.csv("../data/GCF_000001405.40.common.chr.tsv", sep="\t", header=FALSE)
+dbsnp = read.csv("data/GCF_000001405.40.common.chr.tsv", sep="\t", header=FALSE)
 mut2$dbsnp = "no"
 for (i in 1:nrow(mut2)) {
     tmp = dbsnp[dbsnp$V1 %in% mut2$Chrom[i] & dbsnp$V2 %in% mut2$Pos[i],]
@@ -183,7 +186,7 @@ mut2[mut2$dbsnp=="yes",]
 rm(dbsnp)
 
 # Missing variants in filtered common 1kG sites?
-kG = read.csv("../data/1000G_phase3_v4_20130502.sites.hg38.af01.vcf", sep="\t", skip=3527)
+kG = read.csv("data/1000G_phase3_v4_20130502.sites.hg38.af01.vcf", sep="\t", skip=3527)
 mut2$kG = "no"
 for (i in 1:nrow(mut2)) {
     tmp = kG[kG$V1 %in% mut2$Chrom[i] & kG$V2 %in% mut2$Pos[i],]
@@ -196,7 +199,7 @@ mut2[mut2$kG=="yes",]
 rm(kG)
 
 # Missing variants in filtered >20% samples sites?
-gatk = readxl::read_excel("tables/snv_indel_maf_less20_Project_bc_mut_gatk_hc_dbsnp.tsv")
+gatk = read.table("tables/snv_indel_maf_less20_Project_bc_mut_gatk_hc_dbsnp.tsv", sep="\t", header=T)
 mut2$Freq = ""
 for (i in 1:nrow(mut2)) {
     if(mut2$gatk[i]=="no") next

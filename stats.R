@@ -11,7 +11,8 @@ library(ggpubr)
 library(cowplot)
 
 
-expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp", sep="")
+expname = "_Project_bc_mut_gatk_hc_dbsnp"
+# expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp", sep="")
 
 
 
@@ -48,7 +49,7 @@ all_long2 <- gather(all, filter, count, all:snv_indel_20, factor_key = TRUE)
 
 
 # visualise
-pdf(paste("plots/hc_stats_merged_single_violin", expname, ".pdf", sep = ""), width = 9, height = 9)
+pdf(paste("plots/fig1_hc_stats_merged_single_violin", expname, ".pdf", sep = ""), width = 9, height = 9)
 p <- ggplot(data = all_long[!all_long$filter %in% c("kG", "dbsnp", "snv_indel", "snv_indel_20") ,], aes(x = cell_line, y = count, fill = filter)) +
     geom_bar(stat = "identity", position=position_dodge()) +
     theme_bw(base_size = 12, base_family = "") +
@@ -67,8 +68,8 @@ p1 <- ggplot(data = all_long2[!all_long$filter %in% "kG",], aes(x = filter, y = 
     xlab("") + ylab("Number of mutations")
 # number of filtered variants correlation to star statistics
 p2 <- ggplot(data = all_long2[all_long2$filter %in% c("all", "pass", "dbsnp", "snv_indel_20"),], aes(x = mapped, y = count)) +
-    ggtitle("Reads vs variant") +
-    xlab("Mapped reads in Mio") + ylab("Number of mutations") +
+    ggtitle("Reads vs variants") +
+    xlab("Mapped reads in million") + ylab("Number of mutations") +
     theme_bw(base_size = 12, base_family = "") +
     facet_wrap( ~ filter, ncol=1, scales="free_y") +
     stat_smooth(method = "lm", color="black", formula = y ~ x) + # linear regression line, by default includes 95% confidence region

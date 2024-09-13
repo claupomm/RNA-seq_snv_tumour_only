@@ -12,12 +12,12 @@
 
 # filter steps:
 # 1. identify SNV via haplotypecaller => .hc.vcf.gz
-# 2. >=5 depth => .hc.pass.vcf.gz
+# 2. <5 depth => .hc.pass.vcf.gz
 # 3. RNA edit sites => .hc.pass2.vcf.gz
 # 4. lcr sites => .hc.pass2.lcr.vcf.gz
 # 5. dbsnp => .hc.pass2.lcr.dbsnp.vcf.gz
-# 6. protein coding + 1000genomes + gnomAD => R, snv_indel
-# 7. <20% => R, snv_indel_20
+# 6. not protein coding + 1000genomes + gnomAD => R, snv_indel
+# 7. >=20% => R, snv_indel_20
 
 
 
@@ -26,7 +26,8 @@ library(tidyr)
 library(ggplot2)
 library(data.table)
 
-expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp2", sep="")
+expname = "_Project_bc_mut_gatk_hc_dbsnp2"
+# expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp2", sep="")
 
 
 # cell line samples
@@ -38,7 +39,7 @@ samples = samples[!duplicated(samples$sampleName), ]
 ref = read.table(paste("tables/cosmic_mut_more", expname, ".tsv", sep = ""),
     header=T, sep = "\t")
 start="cosmic_mut_more_chr_pos_"
-end="_Project_Claudia231017_bc_mut_gatk_hc_dbsnp2.vcf"
+end="_Project_bc_mut_gatk_hc_dbsnp2.vcf"
 
 for (i in unique(ref$Sample_name)) {
     tmp = ref[ref$Sample_name==i,]

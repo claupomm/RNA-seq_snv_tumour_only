@@ -14,20 +14,22 @@
 
 # filter steps:
 # 1. identify SNV via haplotypecaller => .hc.vcf.gz
-# 2. >=5 depth => .hc.pass.vcf.gz
+# 2. <5 depth => .hc.pass.vcf.gz
 # 3. RNA edit sites => .hc.pass2.vcf.gz
 # 4. lcr sites => .hc.pass2.lcr.vcf.gz
 # 5. dbsnp => .hc.pass2.lcr.dbsnp.vcf.gz
-# 6. protein coding + 1000genomes + gnomAD => R, snv_indel
-# 7. <20% => R, snv_indel_20
+# 6. not protein coding + 1000genomes + gnomAD => R, snv_indel
+# 7. >=20% => R, snv_indel_20
 
 library(psych)
 library(tidyr)
 library(ggplot2)
 library(data.table)
 library(cowplot)
+library(gtools)
 
-expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp2", sep="")
+expname = "_Project_bc_mut_gatk_hc_dbsnp2"
+# expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp2", sep="")
 
 
 # cell line samples
@@ -39,21 +41,18 @@ samples = samples[!duplicated(samples$sampleName), ]
 ref = read.table(paste("tables/cosmic_mut", expname, ".tsv", sep = ""),
     header=T, sep = "\t")
 start="cosmic_mut_more_chr_pos_"
-end="_Project_Claudia231017_bc_mut_gatk_hc_dbsnp2.vcf"
+end="_Project_bc_mut_gatk_hc_dbsnp2.vcf"
 
 spec = read.table("spec_sens/overlap_cosmic400_samples.csv", header=T, sep = ",", row.names=1)
 colnames(spec) = gsub("_pass2", "_edit", colnames(spec))
 spec$P_cosmic_all = 0
 spec$N = spec$FP_hc
 
-for (i in unique(ref$Sample_name)) {
-    tmp = ref[ref$Sample_name==i,]
+for (i in unique(ref$cell_line)) {
+    tmp = ref[ref$cell_line==i,]
     tmp = tmp[order(tmp$Pos),]
-    tmp$Chrom = as.numeric(gsub("chr", "", tmp$Chrom))
-    tmp = tmp[order(tmp$Chrom),]
-    tmp$Chrom[is.na(tmp$Chrom)] = "X"
-    tmp$Chrom = paste("chr",tmp$Chrom, sep="")
-    print(paste("dpulicated:", sum(duplicated(paste(tmp$Chrom, tmp$Pos)))))
+    tmp = tmp[mixedorder(tmp$Chrom),]
+    # print(paste("duplicated:", sum(duplicated(paste(tmp$Chrom, tmp$Pos)))))
     spec[i, "P_cosmic_all"] = nrow(tmp)
 }
 
@@ -64,7 +63,7 @@ for (i in unique(ref$Sample_name)) {
 tab = data.frame(cell_line = rownames(spec))
 i = "hc"
 tmp = cbind(spec[,paste("TP", i, sep="_")], 
-            spec[,paste("   ", i, sep="_")],
+            spec[,paste("FP", i, sep="_")],
             spec[,paste("FN", i, sep="_")],
             spec[,"P_cosmic_all"],
             spec[,"N"])
@@ -91,7 +90,7 @@ tab$filter = factor(x = tab$filter, levels = unique(tab$filter))
 
 
 
-pdf(paste("plots/spec_sens", expname, ".pdf", sep = ""), width = 6, height = 3)
+pdf(paste("plots/fig_s1_spec_sens", expname, ".pdf", sep = ""), width = 6, height = 3)
 p <- ggplot(data = tab, aes(x = filter, y = sensitivity)) +
     geom_violin(width=0.2) +
     geom_point(color="grey") +

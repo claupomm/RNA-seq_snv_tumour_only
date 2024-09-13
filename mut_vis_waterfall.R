@@ -15,7 +15,8 @@ library(gridExtra)
 
 set.seed(383)
 
-expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp_cosmic", sep="")
+expname = "_Project_bc_mut_gatk_hc_dbsnp_cosmic"
+# expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp_cosmic", sep="")
 
 # get filtered mutations with indels
 # get subtypes
@@ -91,19 +92,22 @@ maf2 = maf2[maf2$id %in% tmp$id, colnames(maf2)!="id"]
 
 # filter allowed mutation types
 # Detected an invalid mutation type, valid values for MAF are: Nonsense_Mutation, Frame_Shift_Ins, Frame_Shift_Del, Translation_Start_Site, Splice_Site, Nonstop_Mutation, In_Frame_Ins, In_Frame_Del, Missense_Mutation, 5'Flank, 3'Flank, 5'UTR, 3'UTR, RNA, Intron, IGR, Silent, Targeted_Region, NA
-allowed = c("Nonsense_Mutation", "Frame_Shift_Ins", "Frame_Shift_Del", "Translation_Start_Site", "Splice_Site", "Nonstop_Mutation", "In_Frame_Ins", "In_Frame_Del", "Missense_Mutation", NA)
+# allowed = c("Nonsense_Mutation", "Frame_Shift_Ins", "Frame_Shift_Del", "Translation_Start_Site", "Splice_Site", "Nonstop_Mutation", "In_Frame_Ins", "In_Frame_Del", "Missense_Mutation", NA)
+allowed = c("Nonsense_Mutation", "Frame_Shift_Ins", "Frame_Shift_Del", "In_Frame_Ins", "In_Frame_Del", "Missense_Mutation", NA)
 maf2 = maf2[maf2$Variant_Classification %in% allowed, ]
 
 # get cosmic genes
 gatk = read.table("tables/cosmic_mut_Project_bc_mut_gatk_hc_dbsnp2.tsv", header=TRUE, sep="\t") 
-maf3 = maf2[maf2$SYMBOL %in% gatk$symbol, ]
+tab = maf2[maf2$SYMBOL %in% gatk$symbol, c(10,13,5)]
+colnames(tab) = c("sample", "gene", "mutation")
+myHierarchy <- data.table("mutation"=allowed, color=c("#bdbdbd", "#e31a1c", "#fb9a99", "#1f78b4", "#a6cee3", "#b2df8a"))
+plotData = Waterfall(tab, mutationHierarchy = myHierarchy, geneMax = 50, plotA=NULL, plotB="frequency")
 
-
-pdf(paste('plots/waterfall',expname,'.pdf',sep=''), height=14,width=12)
-waterfall(maf3, maxGenes = 50, mainDropMut=T, plotMutBurden = FALSE, mainXlabel=TRUE, section_heights=c(0.1,10))
+pdf(paste('plots/fig4a_waterfall',expname,'.pdf',sep=''), height=15,width=13)
+drawPlot(plotData)
 dev.off()
 
-write.table(maf3, paste('tables/waterfall',expname,'.csv',sep=''), row.names=F, quote=F, sep="\t")
+write.table(tab, paste('tables/waterfall',expname,'.csv',sep=''), row.names=F, quote=F, sep="\t")
 
 ## transform csv files to xls tables
 setwd(paste(getwd(),'/tables',sep=''))
@@ -113,9 +117,11 @@ setwd(gsub('/tables','',getwd()))
 
 
 # distribution of mutation types
-maf3 = readxl::read_excel("tables/waterfall_Project_bc_mut_gatk_hc_dbsnp_all_genes.xls")
-pdf(paste("plots/barplot_mut_types_waterfall", expname, ".pdf", sep = ""), width = 3, height = 5)
-tab = maf3 %>% count(Variant_Classification) %>% as.data.frame()
+tab = data.frame(readxl::read_excel("tables/waterfall_Project_bc_mut_gatk_hc_dbsnp_cosmic.xls"))
+colnames(tab) = c("Tumor_Sample_Barcode", "SYMBOL", "Variant_Classification")
+tab = data.frame(table(tab$Variant_Classification))
+colnames(tab) = c("Variant_Classification", "n")
+pdf(paste("plots/fig4b_barplot_mut_types_waterfall", expname, ".pdf", sep = ""), width = 3, height = 5)
 p1 <- ggplot(data = tab, aes(x = Variant_Classification, y = n)) +
     geom_bar(stat = "identity", position=position_dodge()) + #geom_jitter(width = 0.2) +
     theme_bw(base_size = 12, base_family = "") +
