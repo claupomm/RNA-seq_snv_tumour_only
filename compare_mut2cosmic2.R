@@ -12,7 +12,8 @@ library(gplots)
 library(gridExtra)
 library(cowplot)
 
-expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp2", sep="")
+expname = "_Project_bc_mut_gatk_hc_dbsnp2"
+# expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp2", sep="")
 
 
 # cell line samples
@@ -46,9 +47,9 @@ write.table(mut2, paste("tables/cosmic_mut", expname, ".tsv", sep = ""),
     row.names = FALSE, sep = "\t")
 
 # visualisation 
-mut_long <- gather(mut2[mut2$found=="no", colnames(mut2) %in% c("cell_line", "LCR", "Freq", "Depth")], cosmic, count, LCR:Depth, factor_key = TRUE)
+mut_long <- gather(mut2[mut2$found=="no", colnames(mut2) %in% c("cell_line", "LCR", "Depth")], cosmic, count, LCR:Depth, factor_key = TRUE)
 mut_long$cell_line = as.factor(mut_long$cell_line)
-mut_long$count = factor(mut_long$count, levels=c("in", "out", ">20%", "<=20%", "<=5", ">5"))
+mut_long$count = factor(mut_long$count, levels=c("in", "out", "<=5", ">5"))
 p2 <- ggplot(data = mut_long, aes(x = cell_line, fill = count)) +
     geom_bar(stat = "count", position = "fill") + 
     theme_bw(base_size = 12, base_family = "") +
@@ -69,7 +70,7 @@ p1 <- ggplot(data = mut2, aes(x = cell_line, fill = found)) +
 
 
 # heatmap of cosmic gene expression
-tpm = read.csv("../tables/TPM_salmon_Project_bc.tsv", sep = "\t")
+tpm = read.csv("tables/TPM_salmon_Project_bc.tsv", sep = "\t")
 colnames(tpm) = gsub("\\.", "-", colnames(tpm))
 genes = unique(mut2$symbol)
 tab = tpm[match(genes, tpm$external_gene_name), c(9:ncol(tpm))]
@@ -90,6 +91,6 @@ p3 = ggplot(tab_long, aes(cell_line, symbol)) +
     scale_fill_gradient2(midpoint=mid, low="#377eb8", mid="white",
                      high="#e41a1c", space ="Lab")
   
-pdf(paste('plots/cosmic_heatmap_variant',expname,'.pdf',sep=''), height = 4, width=10)
-plot_grid(p1, p2, p3, labels = c("A", "B", "C"), ncol=3)
+pdf(paste('plots/fig2_cosmic_heatmap_variant',expname,'.pdf',sep=''), height = 4, width=10)
+plot_grid(p1, p2, p3, labels = c("a", "b", "c"), ncol=3)
 dev.off()

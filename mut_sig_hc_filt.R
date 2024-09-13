@@ -16,7 +16,8 @@ library(gridExtra)
 library(cowplot)
 
 
-expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp", sep="")
+expname = "_Project_bc_mut_gatk_hc_dbsnp"
+# expname = paste("_",basename(getwd()), "_gatk_hc_dbsnp", sep="")
 
 # get subtypes
 samples = read.csv("file2sample.csv")
@@ -129,8 +130,13 @@ names(G_lists) <- GROUPS
 
 
 # Getting known signatures
+# downloaded from Cosmic, current release 3.3.1
+signatures = read.table("data/COSMIC_v3.3.1_SBS_GRCh38.txt", header=TRUE, row.names=1)
 # breast cancer mut sig, Alexandrov 2020
 signatures = signatures[,colnames(signatures) %in% paste("SBS", c(1,2,3,5,8,9,13,"17a", "17b",18,37,40,41), sep="")]
+
+# 96 mutation profile
+mut_mat <- mut_matrix(vcf_list = G_lists, ref_genome = ref_genome)
 
 
 # The function fit_to_signatures_strict calculates the best possible linear combination of mutational signatures, adhering to non-negative least-squares constraints, in order to reconstruct the mutation matrix with the highest degree of accuracy.
@@ -141,7 +147,7 @@ strict_refit <- fit_to_signatures_strict(mut_mat, as.matrix(signatures), max_del
 fit_res_strict <- strict_refit$fit_res
 
 
-pdf(paste("plots/mut_sig", expname, ".pdf", sep = ""), width = 9, height = 9)
+pdf(paste("plots/fig3_mut_sig", expname, ".pdf", sep = ""), width = 9, height = 9)
 type_occurrences <- mut_type_occurrences(G_lists, ref_genome)
 p1 <- plot_spectrum(type_occurrences, indv_points = TRUE)
 p2 <- plot_96_profile(mut_mat[,c(1,4, 6,9,15, 25,28,29)]) # cell lines with typical mut sig
@@ -149,8 +155,8 @@ p3 <- plot_contribution(fit_res_strict$contribution,
         coord_flip = TRUE,
         mode = "relative"
 )
-p13 = plot_grid(p1, p3, labels = c("A", "C"), ncol=1, rel_heights = c(1, 2))
-plot_grid(p13, p2, ncol=2, labels = c("", "B"), rel_widths = c(1, 1))
+p13 = plot_grid(p1, p3, labels = c("a", "c"), ncol=1, rel_heights = c(1, 2))
+plot_grid(p13, p2, ncol=2, labels = c("", "b"), rel_widths = c(1, 1))
 dev.off()
 
 
