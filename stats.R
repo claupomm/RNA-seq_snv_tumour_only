@@ -80,3 +80,35 @@ pp1 = plot_grid(p, p1, labels = c("A", "B"), ncol=1, rel_heights = c(2, 1))
 plot_grid(pp1, p2, ncol=2, labels = c("", "C"), rel_widths = c(5, 2))
 dev.off()
 
+# for review BMC res notes
+pdf(paste("plots/fig2_hc_stats_merged_single_violin", expname, "_review.pdf", sep = ""), width = 9, height = 9)
+p <- ggplot(data = all_long[!all_long$filter %in% c("kG", "dbsnp", "snv_indel", "snv_indel_20") ,], aes(x = cell_line, y = count, fill = filter)) +
+    geom_bar(stat = "identity", position=position_dodge()) +
+    theme_bw(base_size = 12, base_family = "") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position="none") +
+    facet_wrap(~filter, ncol = 1) +
+    scale_fill_brewer(palette = "Paired") +
+    ggtitle("Mutation filter") +
+    xlab("") + ylab("Number of mutations")
+p1 <- ggplot(data = all_long2[!all_long2$filter %in% "kG",], aes(x = filter, y = count)) +
+    geom_violin() + #geom_jitter(width = 0.2) +
+    geom_boxplot(width=0.2, color="grey", alpha=0.2) +
+    scale_y_log10() +
+    expand_limits(y=c(0.1,max(all_long2$count))) +
+    theme_bw(base_size = 12, base_family = "") +
+    # theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+    ggtitle("Filtering steps") +
+    xlab("") + ylab("Number of mutations")
+# number of filtered variants correlation to star statistics
+p2 <- ggplot(data = all_long2[all_long2$filter %in% c("all", "pass", "dbsnp", "snv_indel_20"),], aes(x = mapped, y = count)) +
+    ggtitle("Reads vs variants") +
+    xlab("Mapped reads in million") + ylab("Number of mutations") +
+    theme_bw(base_size = 12, base_family = "") +
+    facet_wrap( ~ filter, ncol=1, scales="free_y") +
+    stat_smooth(method = "lm", color="black", formula = y ~ x) + # linear regression line, by default includes 95% confidence region
+    geom_point() +
+    stat_cor(aes(label = paste(..rr.label..)), # adds R^2 value
+            r.accuracy = 0.01)
+pp1 = plot_grid(p, p1, labels = c("a", "b"), ncol=1, rel_heights = c(2, 1))
+plot_grid(pp1, p2, ncol=2, labels = c("", "c"), rel_widths = c(5, 2))
+dev.off()

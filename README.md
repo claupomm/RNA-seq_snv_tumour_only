@@ -37,15 +37,15 @@ Please note, that third-party data download links might change over time and so 
 
 Following tools / programs need to be installed and running:
 
-- fastp for trimming the reads
-- STAR aligner for mapping
-- GATK bundle of the Broad institute: removal of read duplicates, variant calling, etc
+- fastp for trimming the reads (0.23.4)
+- STAR aligner for mapping (2.7.10b)
+- GATK bundle of the Broad institute: removal of read duplicates, variant calling, etc (4.3.0)
 - samtools
-- snpeff/snpsift
-- vcftools
+- snpeff/snpsift (5.1d)
+- vcftools (0.1.16)
 - VEP, ensembl-vep-105 includes gnomad r2.1.1
-- vcf2maf: https://github.com/mskcc/vcf2maf/blob/main/README.md
-- R-packages GenVisR, MutationalPatterns
+- vcf2maf: https://github.com/mskcc/vcf2maf/blob/main/README.md, vcf2maf.pl script
+- R-packages GenVisR (1.30.0), MutationalPatterns (3.8.1)
 
 
 ### Data
@@ -359,9 +359,9 @@ R --file="mut_vis_waterfall.R" &> mut_vis_waterfall.Rout  &
 ```
 
 
-### Specificity and sensitivity
+### Specificity, sensitivity, and precision
 
-In order to compare the improvement of the successive filtering steps of the pipeline, specificity and sensitivity are calculated based on the verified COSMIC 400 variants set of the 10 overlapping breast cancer cell lines of DSMZ. 
+In order to compare the improvement of the successive filtering steps of the pipeline, specificity, sensitivity, precision are calculated based on the verified COSMIC 400 variants set of the 10 overlapping breast cancer cell lines of DSMZ. 
 Counting of the variant intersect is carried out via vcftools (https://vcftools.github.io/). 
 
 #### Prepare sample vcf
@@ -407,7 +407,7 @@ done
 ```
 
 #### Calculate and visualise
-As basis for calculating sensitivity and specificity the numbers of all positive variants of a sample are derived from the extracted 400 COSMIC variants and the numbers of all negative variants are taken from the unfiltered called variants of a sample without the positive variants. Furtheron, true positive variants correspond to the intersect to the COSMIC variant set and false positive are those, which are unique and not overlapping to the COSMIC variant set for each sample and filter step, and false negatives those, which are unique for COSMIC variant set.
+As basis for calculating sensitivity, specificity, and precision,  the numbers of all positive variants of a sample are derived from the extracted 400 COSMIC variants and the numbers of all negative variants are taken from the unfiltered called variants of a sample without the positive variants. Furtheron, true positive variants correspond to the intersect to the COSMIC variant set and false positive are those, which are unique and not overlapping to the COSMIC variant set for each sample and filter step, and false negatives those, which are unique for COSMIC variant set.
 ```
 cd $DIR
 R --file="spec_sens2.R"

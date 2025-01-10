@@ -25,6 +25,7 @@ mut2 = read.table(paste("tables/cosmic_mut", expname, ".tsv", sep = ""), header 
 mut = read.table(paste("tables/cosmic_mut_more", expname, ".tsv", sep = ""), header = TRUE)
 colnames(mut2)[1] = "cell_line"
 colnames(mut2)[colnames(mut2) == "gatk"] = "found"
+mut2$found[mut2$Freq!="<20%"] = "no"
 
 # read depth for cosmic variant sites
 depth = readxl::read_excel("tables/cosmic_samples.xlsx")
@@ -88,9 +89,9 @@ p3 = ggplot(tab_long, aes(cell_line, symbol)) +
     labs(x = "", y = "") +
     ggtitle("Cosmic genes") +
     scale_y_discrete(limits = unique(tab_long$symbol)) +
-    scale_fill_gradient2(midpoint=mid, low="#377eb8", mid="white",
+    scale_fill_gradient2(name="TPM", midpoint=mid, low="#377eb8", mid="white",
                      high="#e41a1c", space ="Lab")
   
-pdf(paste('plots/fig2_cosmic_heatmap_variant',expname,'.pdf',sep=''), height = 4, width=10)
+pdf(paste('plots/fig3_cosmic_heatmap_variant',expname,'.pdf',sep=''), height = 4, width=10)
 plot_grid(p1, p2, p3, labels = c("a", "b", "c"), ncol=3)
 dev.off()
