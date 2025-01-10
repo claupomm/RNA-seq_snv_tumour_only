@@ -131,5 +131,14 @@ p1 <- ggplot(data = tab, aes(x = Variant_Classification, y = n)) +
 p1
 dev.off()
 
+pdf(paste("plots/fig4b2_barplot_mut_types_waterfall", expname, ".pdf", sep = ""), width = 3, height = 5)
+p1 <- ggplot(data = tab[c(6,2,1,4,3,5),], aes(x = Variant_Classification, y = n)) +
+    geom_bar(stat = "identity", position=position_dodge(), fill=c("#bdbdbd", "#b30000", "#ef6548", "#c51b7d", "#de77ae", "#74c476")) + #geom_jitter(width = 0.2) +
+    theme_bw(base_size = 12, base_family = "") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+    ggtitle("Mutation types") +
+    xlab("") + ylab("Number of mutations")
+p1
+dev.off()
 
 

@@ -1,6 +1,6 @@
 ###################################################################
-# Calculate and visualise sensitivity and specificity:
-# As basis for calculating sensitivity and specificity 
+# Calculate and visualise sensitivity, specificity, and precision:
+# As basis for calculating sensitivity, specificity, and precision 
 # the numbers of all positive variants of a sample are derived 
 # from the extracted 400 COSMIC variants and 
 # the numbers of all negative variants are taken 
@@ -60,6 +60,7 @@ for (i in unique(ref$cell_line)) {
 # calculate specificity and sensitivity for the different mutation filtering steps
 # sensitivity: TP/(TP+FN)
 # specificity: TN/(TN+FP)
+# precision: TP/(TP+FP)
 tab = data.frame(cell_line = rownames(spec))
 i = "hc"
 tmp = cbind(spec[,paste("TP", i, sep="_")], 
@@ -72,6 +73,7 @@ tmp = cbind(rownames(spec), filter=i, tmp)
 colnames(tmp) = c("cell_line", "filter", "TP", "FP", "FN", "P", "N")
 tmp$specificity = (tmp$N-tmp$FP)/tmp$N
 tmp$sensitivity = tmp$TP/tmp$P
+tmp$precision = tmp$TP/(tmp$TP+tmp$FP)
 tab = tmp
 for (i in c("pass", "edit", "lcr", "dbsnp")){
     tmp = cbind(spec[,paste("TP", i, sep="_")], 
@@ -84,13 +86,14 @@ for (i in c("pass", "edit", "lcr", "dbsnp")){
     colnames(tmp) = c("cell_line", "filter", "TP", "FP", "FN", "P", "N")
     tmp$sensitivity = tmp$TP/tmp$P
     tmp$specificity = (tmp$N-tmp$FP)/tmp$N
+    tmp$precision = tmp$TP/(tmp$TP+tmp$FP)
     tab = rbind(tab, tmp)
 }
 tab$filter = factor(x = tab$filter, levels = unique(tab$filter))
 
 
 
-pdf(paste("plots/fig_s1_spec_sens", expname, ".pdf", sep = ""), width = 6, height = 3)
+pdf(paste("plots/fig_s1_spec_sens", expname, ".pdf", sep = ""), width = 9, height = 3)
 p <- ggplot(data = tab, aes(x = filter, y = sensitivity)) +
     geom_violin(width=0.2) +
     geom_point(color="grey") +
@@ -105,5 +108,12 @@ p1 <- ggplot(data = tab, aes(x = filter, y = specificity)) +
     theme_bw(base_size = 12, base_family = "") +
     ggtitle("Specificity after filtering") +
     xlab("") + ylab("Specificity")
-plot_grid(p, p1, ncol=2, labels = c("a", "b"))
+p2 <- ggplot(data = tab, aes(x = filter, y = precision)) +
+    geom_violin(outlier.shape = NA) +
+    geom_boxplot(width=0.2, color="grey", alpha=0.2) +
+    # ylim(0, 1) +
+    theme_bw(base_size = 12, base_family = "") +
+    ggtitle("Precision after filtering") +
+    xlab("") + ylab("Precision")
+plot_grid(p, p1, p2, ncol=3, labels = c("a", "b", "c"))
 dev.off()
